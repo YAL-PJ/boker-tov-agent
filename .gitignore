@@ -1,3 +1,5 @@
 .stfolder
 .stignore
 *.sync-conflict-*
+.obsidian/
+Welcome.md
