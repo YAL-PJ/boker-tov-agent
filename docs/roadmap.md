@@ -8,11 +8,11 @@
 
 ## Phase 0 — Update the specs (Obsidian only, no server work)
 
-- [ ] **0.1** Rewrite `core/morning-flow.md` to the new spec: 10 free-text questions in the agreed order, no buttons, no branches, freeze mechanic, coach behavior, first-task ≤30min rule, timer-at-the-end.
-- [ ] **0.2** Update `core/identity.md`: add the dual mandate (push toward work / full permission to rest, wholeness not coercion). Remove the modes section. Add: never auto-start — always ask readiness. Add: not a therapist — refer to the therapist bot.
-- [ ] **0.3** Create `core/projects.md`: list your active projects, each with 2–4 lines of context (status, current focus).
-- [ ] **0.4** Remove `therapist/listener.md` and `therapist/focus.md` from the loaded set (keep the files parked if you want, but out of `core/`).
-- [ ] **0.5** Save `docs/features.md` and `docs/roadmap.md` (these two documents) into the repo.
+- [x] **0.1** Rewrite `core/morning-flow.md` to the new spec: 10 free-text questions in the agreed order, no buttons, no branches, freeze mechanic, coach behavior, first-task ≤30min rule, timer-at-the-end.
+- [x] **0.2** Update `core/identity.md`: add the dual mandate (push toward work / full permission to rest, wholeness not coercion). Remove the modes section. Add: never auto-start — always ask readiness. Add: not a therapist — refer to the therapist bot.
+- [x] **0.3** Create `core/projects.md`: list your active projects, each with 2–4 lines of context (status, current focus).
+- [x] **0.4** Remove `therapist/listener.md` and `therapist/focus.md` from the loaded set (keep the files parked if you want, but out of `core/`).
+- [x] **0.5** Save `docs/features.md` and `docs/roadmap.md` (these two documents) into the repo.
 
 **Checkpoint:** message the bot "מה אתה יודע עליי ועל הפרויקטים שלי" — it should answer from the updated files, mention the dual mandate tone, know your projects.
 

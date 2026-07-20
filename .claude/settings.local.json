@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p parked)",
+      "Bash(git mv *)",
+      "Bash(rmdir therapist *)",
+      "Bash(ls therapist *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
