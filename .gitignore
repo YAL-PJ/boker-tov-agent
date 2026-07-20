@@ -3,3 +3,4 @@
 *.sync-conflict-*
 .obsidian/
 Welcome.md
+.claude/
