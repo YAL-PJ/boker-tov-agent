@@ -1,18 +1,19 @@
 {
   "session": {
-    "status": "ended",
-    "number": 3,
-    "started_at": "2026-07-20T12:35:30.061Z",
-    "last_message_at": "2026-07-20T12:35:30.061Z"
+    "status": "active",
+    "number": 10,
+    "started_at": "2026-07-21T14:14:54.215Z",
+    "last_message_at": "2026-07-21T14:15:06.577Z"
   },
   "last_session": {
-    "archive_file": "archive/2026-07-20-session3.md",
-    "ended_at": "2026-07-20T12:35:40.339Z",
+    "archive_file": "archive/2026-07-21-session9.md",
+    "ended_at": "2026-07-21T14:14:50.417Z",
     "tomorrow_notes": ""
   },
   "flow": {
-    "position": null,
+    "position": 1,
     "current_task": null,
-    "timer": null
+    "timer": null,
+    "frozen": false
   }
 }
