@@ -20,9 +20,9 @@
 
 ## Phase 1 — Memory: the bot stops forgetting (4c, dumb-simple version)
 
-- [ ] **1.1** n8n: after the Gemini node, an Execute Command node appends the exchange to `today.md` (`### [time]\nיהודה: ...\nבוקר טוב: ...`).
-- [ ] **1.2** Nightly cron (before the 03:00 git snapshot): if `today.md` is non-empty → move to `archive/YYYY-MM-DD.md`, create fresh empty `today.md`.
-- [ ] **1.3** Verify the archive gets committed by the existing git snapshot.
+- [x] **1.1** n8n: after the Gemini node, an Execute Command node appends the exchange to `today.md` (`### [time]\nיהודה: ...\nבוקר טוב: ...`).
+- [x] **1.2** Nightly cron (before the 03:00 git snapshot): if `today.md` is non-empty → move to `archive/YYYY-MM-DD.md`, create fresh empty `today.md`.
+- [x] **1.3** Verify the archive gets committed by the existing git snapshot.
 
 **Checkpoint:** chat with the bot, ask "מה אמרתי לך לפני שתי הודעות?" — it answers correctly. Next morning: yesterday's file is in `archive/` and on GitHub.
 
