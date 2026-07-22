@@ -1,18 +1,18 @@
 {
   "session": {
-    "status": "active",
-    "number": 10,
-    "started_at": "2026-07-21T14:14:54.215Z",
-    "last_message_at": "2026-07-21T14:15:06.577Z"
+    "status": "ended",
+    "number": 11,
+    "started_at": "2026-07-21T19:33:01.963Z",
+    "last_message_at": "2026-07-21T19:38:59.661Z"
   },
   "last_session": {
-    "archive_file": "archive/2026-07-21-session9.md",
-    "ended_at": "2026-07-21T14:14:50.417Z",
+    "archive_file": "archive/2026-07-21-session11.md",
+    "ended_at": "2026-07-21T19:39:18.803Z",
     "tomorrow_notes": ""
   },
   "flow": {
-    "position": 1,
-    "current_task": null,
+    "position": 11,
+    "current_task": "בדיקת טסטים",
     "timer": null,
     "frozen": false
   }
