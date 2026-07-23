@@ -45,29 +45,29 @@
 - [x] **3.2** Wire questions 1–2 only (work window, ritalin). Log answers as structured lines in `today.md` (e.g., `window_end: 17:00`, `meds: no`).
 - [x] **3.3** Add questions 3–5 with the **freeze mechanic**: `frozen: true` in state, bot says the freeze line, any later message resumes at the same position. Parked items (Q5) logged as `parked: ...`.
 - [x] **3.4** Add questions 6–8 (project recognition from `projects.md`, first-task coaching + ≤30min rule, vague day list capture).
-- [x] **3.5** Add questions 9–10 (yesterday review from `last_session_file`, wholeness gate). Skip yesterday review gracefully if no last session exists.
+- [ ] **3.5** Add questions 9–10 (yesterday review from `last_session_file`, wholeness gate). Skip yesterday review gracefully if no last session exists.
 
 **Checkpoint per sub-step:** run the flow for real one morning after each addition. The bot must complete the wired questions, log structured data, and fall back to normal chat afterwards. Freeze test: answer "עייף, לא יכול" mid-flow, walk away, come back — it resumes.
 
 ---
 
-## Phase 4 — Timer + first task
+## Phase 4 — Timer + first task (Wiring fixed, currently in live testing)
 
-- [x] **4.1** Timer mechanism: on duration answer + readiness "כן" → write `timer: {task, minutes, started_at}` to state; a separate n8n Schedule workflow (every minute) checks state and fires the ping when time is up. (Simplest free-tier-safe approach; no long-running Wait nodes.)
-- [x] **4.2** Ping → "איך הולך? סיימת?" → LLM classifies the answer: done / extend (new estimate, restart timer) / stuck (coach).
-- [x] **4.3** Early finish: "סיימתי" while timer runs → cancel timer, celebrate.
-- [x] **4.4** Connect to flow end: question 11 (duration) closes the check-in and arms the first timer.
+- [ ] **4.1** Timer mechanism: on duration answer + readiness "כן" → write `timer: {task, minutes, started_at}` to state; a separate n8n Schedule workflow (every minute) checks state and fires the ping when time is up. (Simplest free-tier-safe approach; no long-running Wait nodes.)
+- [ ] **4.2** Ping → "איך הולך? סיימת?" → LLM classifies the answer: done / extend (new estimate, restart timer) / stuck (coach).
+- [ ] **4.3** Early finish: "סיימתי" while timer runs → cancel timer, celebrate.
+- [ ] **4.4** Connect to flow end: question 11 (duration) closes the check-in and arms the first timer.
 
 **Checkpoint:** full real morning — check-in → first task → timer fires → answer each of the three paths on different days. Also test early finish.
 
 ---
 
-## Phase 5 — End-of-day block + digests + recall
+## Phase 5 — End-of-day block + digests + recall (Wiring fixed, currently in live testing)
 
-- [x] **5.1** End-of-day conversation (triggered by "סיים יום" or when the driven day reaches it): parked items → done-vs-planned → achievements → reflection → tomorrow items. Sequenced like a mini-flow via `flow_position`.
+- [ ] **5.1** End-of-day conversation (triggered by "סיים יום" or when the driven day reaches it): parked items → done-vs-planned → achievements → reflection → tomorrow items. Sequenced like a mini-flow via `flow_position`.
 - [x] **5.2** On archive: one Gemini call produces the structured digest header (summary, achievements, decisions, tomorrow-notes) written above the raw log. Silent-day cron does the same and adds "היום נקטע באמצע".
 - [x] **5.3** Welcome upgrade: new-session welcome references the last digest. Q9 (yesterday review) reads from the digest, delivered in small skippable chunks.
-- [x] **5.4** On-demand recall: intent detection ("תזכיר לי...") → Execute Command greps/reads archive digest headers → answer from them.
+- [ ] **5.4** On-demand recall: intent detection ("תזכיר לי...") → Execute Command greps/reads archive digest headers → answer from them.
 
 **Checkpoint:** end a real day → archive file has digest + raw log. Next session: welcome mentions yesterday, Q9 works, "מה עשינו לפני 3 ימים?" gets a real answer.
 
@@ -75,13 +75,13 @@
 
 ---
 
-## Phase 6 — Google Calendar
+## Phase 6 — Google Calendar (Unstarted)
 
-- [x] **6.1** Google OAuth credential in n8n. Test: read today's events, bot can answer "מה יש לי היום ביומן?"
-- [x] **6.2** תכנון יום v1: after first task, bot reflects vague list + remaining window + existing meetings, collects durations, **proposes** the block plan in chat (no writing yet). You approve manually.
-- [x] **6.3** תכנון יום v2: on approval, bot writes the blocks + breaks + end-of-day block (30 min) into the calendar, around fixed meetings.
-- [x] **6.4** Driving the day: Schedule workflow watches the calendar; at each block start → announce + ask readiness → timer mechanic. Never auto-start.
-- [x] **6.5** Interruptions: pause timer / pause day commands; on return → reshuffle remaining blocks in the calendar. "End day" mid-day → jump to end-of-day block.
+- [ ] **6.1** Google OAuth credential in n8n. Test: read today's events, bot can answer "מה יש לי היום ביומן?"
+- [ ] **6.2** תכנון יום v1: after first task, bot reflects vague list + remaining window + existing meetings, collects durations, **proposes** the block plan in chat (no writing yet). You approve manually.
+- [ ] **6.3** תכנון יום v2: on approval, bot writes the blocks + breaks + end-of-day block (30 min) into the calendar, around fixed meetings.
+- [ ] **6.4** Driving the day: Schedule workflow watches the calendar; at each block start → announce + ask readiness → timer mechanic. Never auto-start.
+- [ ] **6.5** Interruptions: pause timer / pause day commands; on return → reshuffle remaining blocks in the calendar. "End day" mid-day → jump to end-of-day block.
 
 **Checkpoint per sub-step:** one real day per feature. Final test: a full driven day — meetings respected, breaks happen, an interruption reshuffles cleanly, end-of-day block runs on schedule.
 

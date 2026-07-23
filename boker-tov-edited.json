@@ -100,7 +100,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const state = JSON.parse($input.first().json.stdout);\nconst now = new Date();\nconst il = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' });\nconst today = il.format(now); // YYYY-MM-DD\n\nconst isNew = state.session.status === 'ended';\n\nif (isNew) {\n  const lastDate = state.last_session.ended_at\n    ? il.format(new Date(state.last_session.ended_at)) : null;\n  state.session.number = (lastDate === today) ? state.session.number + 1 : 1;\n  state.session.status = 'active';\n  state.session.started_at = now.toISOString();\n  state.flow = { position: null, current_task: null, timer: null, frozen: false };\n}\nstate.session.last_message_at = now.toISOString();\n\nreturn [{\n  json: {\n    isNew,\n    archiveFile: state.last_session.archive_file || '',\n    tomorrowNotes: state.last_session.tomorrow_notes || '',\n    stateB64: Buffer.from(JSON.stringify(state, null, 2)).toString('base64')\n  }\n}];"
+        "jsCode": "const state = JSON.parse($input.first().json.stdout);\nconst now = new Date();\nconst il = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' });\nconst today = il.format(now); // YYYY-MM-DD\n\nconst incomingChatId = $('Telegram Trigger').item.json?.message?.chat?.id;\nif (incomingChatId) {\n  state.session.chat_id = incomingChatId;\n}\n\nconst isNew = state.session.status === 'ended';\n\nif (isNew) {\n  const lastDate = state.last_session.ended_at\n    ? il.format(new Date(state.last_session.ended_at)) : null;\n  state.session.number = (lastDate === today) ? state.session.number + 1 : 1;\n  state.session.status = 'active';\n  state.session.started_at = now.toISOString();\n  state.flow = { position: null, current_task: null, timer: null, frozen: false };\n}\nstate.session.last_message_at = now.toISOString();\n\nreturn [{\n  json: {\n    isNew,\n    archiveFile: state.last_session.archive_file || '',\n    tomorrowNotes: state.last_session.tomorrow_notes || '',\n    stateB64: Buffer.from(JSON.stringify(state, null, 2)).toString('base64')\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -126,7 +126,7 @@
     },
     {
       "parameters": {
-        "command": "cat /home/ubuntu/agent/core/*.md /home/ubuntu/agent/today.md 2>/dev/null"
+        "command": "cat /home/ubuntu/agent/core/*.md /home/ubuntu/agent/today.md 2>/dev/null; echo \"\"; echo \"--- ARCHIVE DIGESTS ---\"; head -n 25 /home/ubuntu/agent/archive/*.md 2>/dev/null"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -139,7 +139,7 @@
     },
     {
       "parameters": {
-        "command": "=cat >> /home/ubuntu/agent/today.md << 'BOKEREOF'\n\n### {{ $now.setZone('Asia/Jerusalem').toFormat('HH:mm') }}\nיהודה: {{ $('Telegram Trigger').item.json.message.text }}\nבוקר טוב: {{ $('Parse Reply').first().json.cleanText }}\nBOKEREOF"
+        "command": "=cat >> /home/ubuntu/agent/today.md << 'BOKEREOF'\n\n### {{ $now.setZone('Asia/Jerusalem').toFormat('HH:mm') }}\nיהודה: {{ $('Telegram Trigger').item.json.message.text }}\nבוקר טוב: {{ $('Parse Reply').first().json.cleanText }}\nBOKEREOF\n\npython3 - << 'PYEOF'\nimport datetime\nnow = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')\nmsg = \"\"\"{{ $('Telegram Trigger').item.json.message.text }}\"\"\".strip().replace('\n', ' ')\npos = \"{{ $('Parse Reply').first().json.pos }}\"\nline = f\"[{now}] Msg: '{msg}' | Pos: {pos}\\n\"\nwith open('/home/ubuntu/agent/n8n-activity.log', 'a', encoding='utf-8') as f:\n    f.write(line)\nPYEOF"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -280,7 +280,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $('Read For Archive').first().json.stdout.split('---SPLIT---');\nconst state = JSON.parse(raw[0]);\nconst log = raw[1].trim();\nconst digest = $input.first().json.text || $input.first().json.content?.parts?.[0]?.text || '';\n\nconst active = state.session.status === 'active';\nconst now = new Date();\nconst il = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' });\nconst fname = `archive/${il.format(now)}-session${state.session.number}.md`;\n\nif (active) {\n  state.session.status = 'ended';\n  state.last_session.archive_file = fname;\n  state.last_session.ended_at = now.toISOString();\n  state.last_session.tomorrow_notes = '';\n}\n\nconst archive = digest.trim() + '\\n\\n<!-- RAW-LOG -->\\n\\n' + log + '\\n';\n\nreturn [{\n  json: {\n    active,\n    fname,\n    archiveB64: Buffer.from(archive).toString('base64'),\n    stateB64: Buffer.from(JSON.stringify(state, null, 2)).toString('base64')\n  }\n}];"
+        "jsCode": "const raw = $('Read For Archive').first().json.stdout.split('---SPLIT---');\nconst state = JSON.parse(raw[0]);\nconst log = raw[1].trim();\nconst digest = $input.first().json.text || $input.first().json.content?.parts?.[0]?.text || '';\n\nconst active = state.session.status === 'active';\nconst now = new Date();\nconst il = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' });\nconst fname = `archive/${il.format(now)}-session${state.session.number}.md`;\n\nif (active) {\n  state.session.status = 'ended';\n  state.last_session.archive_file = fname;\n  state.last_session.ended_at = now.toISOString();\n  // Reset flow state on session close\n  state.flow = { position: null, current_task: null, timer: null, frozen: false };\n}\n\nconst archive = digest.trim() + '\\n\\n<!-- RAW-LOG -->' + log + '\\n';\n\nreturn [{\n  json: {\n    active,\n    fname,\n    archiveB64: Buffer.from(archive).toString('base64'),\n    stateB64: Buffer.from(JSON.stringify(state, null, 2)).toString('base64')\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -306,7 +306,7 @@
     },
     {
       "parameters": {
-        "command": "=if [ \"{{ $('Parse Reply').first().json.hasUpdate }}\" = \"true\" ]; then\n  python3 - << 'PYEOF'\nimport json, pathlib, base64, datetime\n\nstate_path = pathlib.Path('/home/ubuntu/agent/state.json')\nstate = json.loads(state_path.read_text(encoding='utf-8'))\nchanged = False\n\npos = \"{{ $('Parse Reply').first().json.pos }}\"\nif pos and pos != \"null\":\n    state['flow']['position'] = None if pos == 'done' else int(pos)\n    changed = True\n\nif \"{{ $('Parse Reply').first().json.freeze }}\" == \"true\":\n    state['flow']['frozen'] = True\n    changed = True\n\nif \"{{ $('Parse Reply').first().json.unfreeze }}\" == \"true\":\n    state['flow']['frozen'] = False\n    changed = True\n\nlogs_raw = base64.b64decode(\"{{ $('Parse Reply').first().json.logsB64 }}\").decode('utf-8')\nif logs_raw.strip():\n    with open('/home/ubuntu/agent/today.md', 'a', encoding='utf-8') as f:\n        f.write('\\n' + logs_raw + '\\n')\n    \n    for line in logs_raw.strip().split('\\n'):\n        if '=' in line:\n            parts = line.split('=', 1)\n            k, v = parts[0].strip(), parts[1].strip()\n            if k == 'first_task':\n                state['flow']['current_task'] = v\n                changed = True\n            elif k == 'timer_minutes':\n                try:\n                    mins = int(v)\n                    now = datetime.datetime.now(datetime.timezone.utc)\n                    ends = now + datetime.timedelta(minutes=mins)\n                    state['flow']['timer'] = {\n                        'task': state['flow'].get('current_task') or 'First Task',\n                        'minutes': mins,\n                        'started_at': now.isoformat(),\n                        'ends_at': ends.isoformat(),\n                        'active': True\n                    }\n                    changed = True\n                except Exception:\n                    pass\n            elif k == 'timer_cancel':\n                state['flow']['timer'] = None\n                changed = True\n\nif changed:\n    state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding='utf-8')\nPYEOF\nfi"
+        "command": "=if [ \"{{ $('Parse Reply').first().json.hasUpdate }}\" = \"true\" ]; then\n  python3 - << 'PYEOF'\nimport json, pathlib, base64, datetime\n\nstate_path = pathlib.Path('/home/ubuntu/agent/state.json')\nstate = json.loads(state_path.read_text(encoding='utf-8'))\nchanged = False\ntrigger_archive = False\n\npos = \"{{ $('Parse Reply').first().json.pos }}\"\nif pos and pos != \"null\":\n    if pos == 'done':\n        state['flow']['position'] = None\n    elif pos == 'archive':\n        state['flow']['position'] = 'archive'\n        trigger_archive = True\n    else:\n        try:\n            state['flow']['position'] = int(pos)\n        except ValueError:\n            state['flow']['position'] = pos\n    changed = True\n\nif \"{{ $('Parse Reply').first().json.freeze }}\" == \"true\":\n    state['flow']['frozen'] = True\n    changed = True\n\nif \"{{ $('Parse Reply').first().json.unfreeze }}\" == \"true\":\n    state['flow']['frozen'] = False\n    changed = True\n\nlogs_raw = base64.b64decode(\"{{ $('Parse Reply').first().json.logsB64 }}\").decode('utf-8')\nif logs_raw.strip():\n    with open('/home/ubuntu/agent/today.md', 'a', encoding='utf-8') as f:\n        f.write('\\n' + logs_raw + '\\n')\n    \n    for line in logs_raw.strip().split('\\n'):\n        if '=' in line:\n            parts = line.split('=', 1)\n            k, v = parts[0].strip(), parts[1].strip()\n            if k == 'first_task':\n                state['flow']['current_task'] = v\n                changed = True\n            elif k == 'tomorrow_notes':\n                state['last_session']['tomorrow_notes'] = v\n                changed = True\n            elif k == 'timer_minutes':\n                try:\n                    mins = int(v)\n                    now = datetime.datetime.now(datetime.timezone.utc)\n                    ends = now + datetime.timedelta(minutes=mins)\n                    state['flow']['timer'] = {\n                        'task': state['flow'].get('current_task') or 'First Task',\n                        'minutes': mins,\n                        'started_at': now.isoformat(),\n                        'ends_at': ends.isoformat(),\n                        'active': True,\n                        'pinged': False\n                    }\n                    changed = True\n                except Exception:\n                    pass\n            elif k == 'timer_cancel':\n                state['flow']['timer'] = None\n                changed = True\n\nif changed:\n    state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding='utf-8')\n\nprint(json.dumps([{\"json\": {\"triggerArchive\": trigger_archive}}]))\nPYEOF\nfi"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -319,7 +319,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Read flow from the POST-Session-Logic state, not the raw on-disk Read State.\n// On a NEW session, Session Logic resets flow to {position:null,frozen:false};\n// reading Read State here would leak the previous (ended) session's position/frozen.\nconst state = JSON.parse(Buffer.from($('Session Logic').first().json.stateB64, 'base64').toString('utf-8'));\nconst flow = state.flow || { position: null, current_task: null, timer: null, frozen: false };\nconst pos = flow.position;\nconst frozen = flow.frozen;\nconst timer = flow.timer;\n\nconst keys = `הערה על מרקרים: המרקרים [[POS: N]], [[POS: done]], [[LOG: key=value]], [[FREEZE]], [[UNFREEZE]] הם חובה — עליך לכתוב אותם בסוף ההודעה כשמתאים, הם המנגנון שמניע את הזרימה. הם מוסרים אוטומטית לפני שיהודה רואה את ההודעה, אז אל תדאג שהוא יראה אותם. מפתחות מותרים ל-[[LOG]]: window_end, meds, tired, emotional, parked, project, first_task, day_list, timer_minutes, timer_cancel.\nאימות window_end: הערך חייב להיות שעה תקינה בפורמט 24 שעות (00:00 עד 23:59), למשל 17:30 או 9:00. אם יהודה נותן ערך שאינו שעה תקינה (כמו \"117\" או \"25:00\") — אל תרשום [[LOG: window_end=...]], בקש ממנו בעדינות להבהיר את השעה, ואל תתקדם לשאלה הבאה עד שיש שעה תקינה.`;\n\nconst tone = `\n--- טון ---\nדבר ישיר, מדוד וחברי — אבל בלי התלהבות מזויפת. אסור סופרלטיבים (\"מעולה\", \"מדהים\", \"וואו\", \"איזה יופי\", \"כל הכבוד\") ואסור לפתוח תשובה בשבח או להחמיא סתם. אם יהודה עשה משהו, התייחס עניינית ולא בהתפעלות. אמן טוב מאתגר, משקף ושואל — לא מריע. חום כן, חנופה לא.`;\n\nlet block;\nif (timer && timer.active) {\n  block = `--- מצב טיימר פעיל ---\nרשת הטיימר פועלת כרגע למשימה: \"${timer.task || flow.current_task || 'משימה'}\".\n- אם יהודה כותב שהוא סיים (\"סיימתי\" / \"גמרתי\" / \"done\"): אשר בקצרה, רשום [[LOG: timer_cancel]], ושאל אם הוא רוצה לעבור למשימה הבאה או לקחת הפסקה.\n- אם יהודה מציין בעיה או מבקש עזרה: הגב כמאמן, עזור לשחרר חסמים או לפרק את המשימה. ` + keys;\n} else if (pos === null && !frozen) {\n  block = `--- בקרת זרימה ---\nאינך נמצא כרגע בצ'ק-אין.\n- אם יהודה מאשר שהוא מוכן להתחיל צ'ק-אין (או אומר היי/בוקר טוב בסשן חדש): שאל את שאלה 1 מ-core/morning-flow.md (חלון עבודה), וסיים עם המרקר [[POS: 1]].\n- אם יהודה מבקש להיזכר במשהו (\"תזכיר לי...\", \"מה עשינו ב...\"): חפש בסיכומים ובקבצים והשב עניינית. ` + keys;\n} else if (frozen) {\n  block = `--- בקרת זרימה: הזרימה מוקפאת ---\nהצ'ק-אין הוקפא בשאלה מספר ${pos} כי יהודה לא היה מסוגל להמשיך.\n- קבל אותו בחזרה בחום, בלי לחץ. אל תזרז.\n- אם הוא מראה שהוא מוכן להמשיך עכשיו — חזור לאותה שאלה מספר ${pos} (בלי לדלג), וסיים עם המרקר [[UNFREEZE]] בלבד. אל תוסיף [[POS]] — המיקום נשאר ${pos}.\n- אם הוא עדיין לא מסוגל (עייף, תקוע, צריך עוד זמן) — תן לגיטימציה מלאה, הישאר מוקפא, אל תוסיף שום מרקר.\n- אם הוא רוצה לדבר על משהו אחר — פשוט תהיה נוכח ותקשיב, הישאר מוקפא. ` + keys;\n} else {\n  block = `--- בקרת זרימה: צ'ק-אין בוקר (שאלה ${pos} מתוך 11) ---\nאתה מנהל את צ'ק-אין הבוקר. אתה נמצא בשאלה מספר ${pos}.\n- המיקום בזרימה נקבע אך ורק לפי המספר ${pos}. אם היסטוריית השיחה נראית סותרת — התעלם, המספר קובע.\n- השאלות לפי הסדר מ-core/morning-flow.md:\n  1. חלון עבודה -> [[LOG: window_end=HH:MM]] -> עוברים ל-[[POS: 2]]\n  2. ריטלין -> [[LOG: meds=yes/no]] -> עוברים ל-[[POS: 3]]\n  3. עייפות -> אם עייף ולא מסוגל לעבוד -> לגיטימציה מלאה למנוחה + [[FREEZE]] (ללא [[POS]]). אחרת -> [[LOG: tired=no/yes]] -> עוברים ל-[[POS: 4]]\n  4. רגשי -> תמיכה קלה, או הפניה למטפל אם כבד. אם תקוע -> [[FREEZE]]. אחרת -> עוברים ל-[[POS: 5]]\n  5. נושא פתוח -> לסגור עכשיו -> [[FREEZE]]. לדחות -> [[LOG: parked=topic]] -> עוברים ל-[[POS: 6]]\n  6. פרויקט -> נהל מול core/projects.md -> [[LOG: project=name]] -> עוברים ל-[[POS: 7]]\n  7. המשימה הראשונה -> חדד לצעד קונקרטי, וודא ≤30 דקות -> [[LOG: first_task=text]] -> עוברים ל-[[POS: 8]]\n  8. רשימת היום -> תפיסה מעורפלת -> [[LOG: day_list=text]] -> עוברים ל-[[POS: 9]]\n  9. סקירת אתמול -> סקור בקצרה מסיכום אתמול/סשן קודם -> עוברים ל-[[POS: 10]]\n  10. שער השלמות -> מוכנות לעבוד מתוך הנאה (מנדט כפול) -> עוברים ל-[[POS: 11]]\n  11. משך ומוכנות -> שאל כמה זמן (בדוק מוכנות \"מוכן להתחיל?\") -> [[LOG: timer_minutes=N]] + [[POS: done]]\n\n- כשיהודה עונה, תן תגובה קצרה ואנושית כמאמן, שאל את שאלה ${pos}, וסיים עם המרקר המתאים. ` + keys;\n}\n\nreturn [{ json: { flowBlock: block + tone } }];"
+        "jsCode": "// Read flow from the POST-Session-Logic state, not the raw on-disk Read State.\nconst state = JSON.parse(Buffer.from($('Session Logic').first().json.stateB64, 'base64').toString('utf-8'));\nconst flow = state.flow || { position: null, current_task: null, timer: null, frozen: false };\nconst pos = flow.position;\nconst frozen = flow.frozen;\nconst timer = flow.timer;\n\nconst keys = `הערה על מרקרים: המרקרים [[POS: N]], [[POS: done]], [[POS: archive]], [[LOG: key=value]], [[FREEZE]], [[UNFREEZE]] הם חובה — עליך לכתוב אותם בסוף ההודעה כשמתאים. מפתחות מותרים ל-[[LOG]]: window_end, meds, tired, emotional, parked, project, first_task, day_list, tomorrow_notes, timer_minutes, timer_cancel.`;\n\nconst tone = `\n--- טון ---\nדבר ישיר, מדוד וחברי — אבל בלי התלהבות מזויפת ובלי סופרלטיבים.\nתגובות בצ'ק-אין: תגובות ענייניות וניטרליות בלבד (\"קיבלתי\", \"הבנתי\", \"רשמתי\"). אל תבריק ולא לחלק שבחים על תשובות שגרתיות.\nעידוד מוצדק: שמור עידוד קצר וממוקד לרגעים אמיתיים בלבד — סיום משימה, התגברות על קושי, או סגירת יום.`;\n\nlet block;\nif (timer && timer.active) {\n  if (timer.pinged) {\n    block = `--- מצב מענה לתזכורת טיימר ---\nהטיימר למשימה \"${timer.task}\" הסתיים והודעת תזכורת נשלחה ליהודה.\n- סווג את תשובתו:\n  1. סיימתי / done -> אשר בקצרה, רשום [[LOG: timer_cancel]], ושאל אם לעבור למשימה הבאה או לקחת הפסקה.\n  2. לא סיימתי / צריך עוד X דקות -> אשר עניינית, ורשום [[LOG: timer_minutes=N]] (כאשר N הוא מספר הדקות להאריכו).\n  3. תקוע -> נהל כמאמן, עזור לשחרר חסמים או לפרק את המשימה. ` + keys;\n  } else {\n    block = `--- מצב טיימר פעיל ---\nהטיימר רץ כרגע למשימה: \"${timer.task}\".\n- אם יהודה כותב שהוא סיים (\"סיימתי\" / \"גמרתי\" / \"done\"): אשר בקצרה, רשום [[LOG: timer_cancel]], ושאל מה הצעד הבא.\n- אם יהודה מציין בעיה או מבקש עזרה: הגב כמאמן, עזור לשחרר חסמים או לפרק את המשימה. ` + keys;\n  }\n} else if (pos === 'eod_1') {\n  block = `--- בקרת זרימה: סיכום סוף יום (שלב 1) ---\nסקור את הנושאים הפתוחים שנרשמו כ-parked במהלך היום. שאל את יהודה מה ברצונו לעשות איתם. בסיום רשום [[POS: eod_2]]. ` + keys;\n} else if (pos === 'eod_2') {\n  block = `--- בקרת זרימה: סיכום סוף יום (שלב 2) ---\nעבור על מה שנעשה היום מול מה שתוכנן, והדגש הישגים מרכזיים. בסיום רשום [[POS: eod_3]]. ` + keys;\n} else if (pos === 'eod_3') {\n  block = `--- בקרת זרימה: סיכום סוף יום (שלב 3) ---\nרפלקציה והערות למחר. שאל \"איך היה היום?\" ומה לרשום כהערה לסשן הבא. כשיש תשובה, רשום [[LOG: tomorrow_notes=...]] וסגור את היום ב-[[POS: archive]]. ` + keys;\n} else if (pos === null && !frozen) {\n  block = `--- בקרת זרימה ---\nאינך נמצא כרגע בצ'ק-אין.\n- אם יהודה מנסה להפעיל צ'ק-אין (היי / בוקר טוב / להתחיל צ'ק-אין): שאל את שאלה 1 מ-core/morning-flow.md (חלון עבודה), וסיים עם המרקר [[POS: 1]].\n- אם יהודה אומר \"סיים יום\" / \"נגמר להיום\": אמור משפט פתיחה קצר לסיכום היום, שאל על ה-parked items, וסיים עם המרקר [[POS: eod_1]].\n- אם יהודה מבקש להיזכר במידע (\"תזכיר לי...\", \"מה עשינו ב...\"): עיין בקטע --- ARCHIVE DIGESTS --- ובתשובות הקודמות והשב עניינית. ` + keys;\n} else if (frozen) {\n  block = `--- בקרת זרימה: הזרימה מוקפאת ---\nהצ'ק-אין הוקפא בשאלה מספר ${pos}.\n- קבל אותו בחזרה בחום, בלי לחץ.\n- אם הוא מראה שהוא מוכן להמשיך עכשיו — חזור לאותה שאלה מספר ${pos}, וסיים עם המרקר [[UNFREEZE]] בלבד.\n- אם הוא עדיין לא מסוגל — תן לגיטימציה מלאה, הישאר מוקפא. ` + keys;\n} else {\n  const nextPos = (typeof pos === 'number' && pos < 11) ? pos + 1 : 'done';\n  block = `--- בקרת זרימה: צ'ק-אין בוקר ---\nיהודה משיב כעת על שאלה מספר ${pos} מתוך 11.\n- הנחיות לעיבוד תשובה ${pos}:\n  * אם ${pos} == 1 (חלון עבודה): המר את תשובת השעה (למשל '16' -> '16:00'), פלוט [[LOG: window_end=16:00]], תן אישור ניטרלי קצר, שאל את שאלה 2 (ריטלין), וסיים עם [[POS: 2]].\n  * אם ${pos} == 2 (ריטלין): פלוט [[LOG: meds=yes/no]], תן אישור ניטרלי קצר, שאל את שאלה 3 (עייפות), וסיים עם [[POS: 3]].\n  * אם ${pos} == 3 (עייפות): אם עייף ולא מסוגל -> [[FREEZE]] (ללא [[POS]]). אחרת -> [[LOG: tired=no/yes]], שאל שאלה 4 (רגשי), וסיים עם [[POS: 4]].\n  * אם ${pos} == 4 (רגשי): תמיכה קלה או הפניה למטפל. אם תקוע -> [[FREEZE]]. אחרת -> שאל שאלה 5 (נושא פתוח), וסיים עם [[POS: 5]].\n  * אם ${pos} == 5 (נושא פתוח): לסגור עכשיו -> [[FREEZE]]. לדחות -> [[LOG: parked=topic]], שאל שאלה 6 (פרויקט), וסיים עם [[POS: 6]].\n  * אם ${pos} == 6 (פרויקט): זהה מול core/projects.md -> [[LOG: project=name]], שאל שאלה 7 (משימה ראשונה), וסיים עם [[POS: 7]].\n  * אם ${pos} == 7 (משימה ראשונה): חדד לצעד קונקרטי ≤30 דקות -> [[LOG: first_task=text]], שאל שאלה 8 (רשימת היום), וסיים עם [[POS: 8]].\n  * אם ${pos} == 8 (רשימת היום): תפוס רשימה -> [[LOG: day_list=text]], שאל שאלה 9 (סקירת אתמול), וסיים עם [[POS: 9]].\n  * אם ${pos} == 9 (סקירת אתמול): סקור בקצרה מ-ARCHIVE DIGESTS -> שאל שאלה 10 (שער השלמות), וסיים עם [[POS: 10]].\n  * אם ${pos} == 10 (שער השלמות): מוכנות מתוך הנאה -> שאל שאלה 11 (משך ומוכנות), וסיים עם [[POS: 11]].\n  * אם ${pos} == 11 (משך ומוכנות): פלוט [[LOG: timer_minutes=N]] וסיים עם [[POS: done]].\n\n- הגב בניטרליות (\"הבנתי\", \"רשמתי\"), שאל את שאלה ${nextPos}, וסיים עם המרקר [[POS: ${nextPos}]]. ` + keys;\n}\n\nreturn [{ json: { flowBlock: block + tone } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -352,7 +352,7 @@
     },
     {
       "parameters": {
-        "command": "python3 - << 'PYEOF'\nimport json, pathlib, datetime, urllib.request, urllib.parse\n\nstate_path = pathlib.Path('/home/ubuntu/agent/state.json')\nif not state_path.exists():\n    exit(0)\n\nstate = json.loads(state_path.read_text(encoding='utf-8'))\ntimer = state.get('flow', {}).get('timer')\n\nif timer and timer.get('active'):\n    ends_at_str = timer.get('ends_at')\n    if ends_at_str:\n        ends_at = datetime.datetime.fromisoformat(ends_at_str)\n        now = datetime.datetime.now(datetime.timezone.utc)\n        if now >= ends_at:\n            timer['active'] = False\n            state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding='utf-8')\n            msg = f\"⏰ הטיימר למשימה \\\"{timer.get('task', 'המשימה')}\\\" הסתיים! איך הולך? סיימת?\"\n            print(msg)\nPYEOF"
+        "command": "python3 - << 'PYEOF'\nimport json, pathlib, datetime\n\nstate_path = pathlib.Path('/home/ubuntu/agent/state.json')\nif not state_path.exists():\n    exit(0)\n\nstate = json.loads(state_path.read_text(encoding='utf-8'))\ntimer = state.get('flow', {}).get('timer')\nchat_id = state.get('session', {}).get('chat_id')\n\nif timer and timer.get('active') and not timer.get('pinged') and chat_id:\n    ends_at_str = timer.get('ends_at')\n    if ends_at_str:\n        ends_at = datetime.datetime.fromisoformat(ends_at_str)\n        now = datetime.datetime.now(datetime.timezone.utc)\n        if now >= ends_at:\n            timer['pinged'] = True\n            state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding='utf-8')\n            msg = f\"⏰ הטיימר למשימה \\\"{timer.get('task', 'המשימה')}\\\" הסתיים! איך הולך? סיימת?\"\n            print(json.dumps([{\"json\": {\"chat_id\": chat_id, \"text\": msg, \"should_send\": True}}]))\n            exit(0)\n\nprint(json.dumps([{\"json\": {\"should_send\": False}}]))\nPYEOF"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -362,6 +362,29 @@
       ],
       "id": "f1a2b3c4-check-timer-state",
       "name": "Check Active Timer"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        400
+      ],
+      "id": "f1a2b3c4-send-timer-ping",
+      "name": "Send Timer Ping",
+      "credentials": {
+        "telegramApi": {
+          "id": "wZ0iPy5aofKLi2qy",
+          "name": "Telegram account"
+        }
+      }
     },
     {
       "parameters": {
@@ -377,17 +400,124 @@
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1.1,
       "position": [
-        416,
-        400
+        2512,
+        464
       ],
-      "id": "f1a2b3c4-google-calendar",
+      "id": "a2951d8f-0d5d-453d-ad90-f722e5ce5bff",
       "name": "Google Calendar",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "googleCalendarOAuth2",
+          "id": "ETmrZaq2NC9cOfAu",
           "name": "Google Calendar account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "should-send-check",
+              "leftValue": "={{ $json.should_send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        312,
+        400
+      ],
+      "id": "f1a2b3c4-should-send-ping-if",
+      "name": "Should Send Ping?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "archive-trigger-check",
+              "leftValue": "={{ $json.triggerArchive }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        192
+      ],
+      "id": "f1a2b3c4-check-trigger-archive",
+      "name": "Check Trigger Archive"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = ($input.first().json.message?.text || '').trim();\nconst stateStr = $('Read State').first()?.json?.stdout;\nlet inEod = false;\n\nif (stateStr) {\n  try {\n    const state = JSON.parse(stateStr);\n    const pos = state.flow?.position;\n    inEod = pos === 'eod_1' || pos === 'eod_2' || pos === 'eod_3' || pos === 'archive';\n  } catch (e) {}\n}\n\nreturn [{ json: { directArchive: inEod } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -300
+      ],
+      "id": "f1a2b3c4-eod-mode-router",
+      "name": "EOD Mode Router"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        600
+      ],
+      "id": "f1a2b3c4-error-trigger",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "command": "=python3 - << 'PYEOF'\nimport datetime, json\n\nnow = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')\nnode_name = \"{{ $json.node.name }}\"\nerr_msg = \"{{ $json.execution.error.message }}\"\n\nline = f\"[{now}] ⚠️ ERROR in '{node_name}': {err_msg}\\n\"\nwith open('/home/ubuntu/agent/n8n-errors.log', 'a', encoding='utf-8') as f:\n    f.write(line)\nPYEOF"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        208,
+        600
+      ],
+      "id": "f1a2b3c4-write-error-log",
+      "name": "Write Local Error Log"
     }
   ],
   "pinData": {},
@@ -549,6 +679,11 @@
             "node": "Send a text message",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Check Trigger Archive",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -569,6 +704,52 @@
         [
           {
             "node": "Check Active Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Active Timer": {
+      "main": [
+        [
+          {
+            "node": "Should Send Ping?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Ping?": {
+      "main": [
+        [
+          {
+            "node": "Send Timer Ping",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Check Trigger Archive": {
+      "main": [
+        [
+          {
+            "node": "Read For Archive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Write Local Error Log",
             "type": "main",
             "index": 0
           }

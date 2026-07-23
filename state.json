@@ -1,18 +1,19 @@
 {
   "session": {
     "status": "ended",
-    "number": 11,
-    "started_at": "2026-07-21T19:33:01.963Z",
-    "last_message_at": "2026-07-21T19:38:59.661Z"
+    "number": 2,
+    "started_at": "2026-07-22T09:49:53.367Z",
+    "last_message_at": "2026-07-22T09:49:53.367Z",
+    "chat_id": 6561059270
   },
   "last_session": {
-    "archive_file": "archive/2026-07-21-session11.md",
-    "ended_at": "2026-07-21T19:39:18.803Z",
+    "archive_file": "archive/2026-07-22-session2.md",
+    "ended_at": "2026-07-23T02:45:01.409424+00:00",
     "tomorrow_notes": ""
   },
   "flow": {
-    "position": 11,
-    "current_task": "בדיקת טסטים",
+    "position": 1,
+    "current_task": null,
     "timer": null,
     "frozen": false
   }
