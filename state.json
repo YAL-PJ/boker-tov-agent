@@ -1,18 +1,18 @@
 {
   "session": {
     "status": "ended",
-    "number": 2,
-    "started_at": "2026-07-22T09:49:53.367Z",
-    "last_message_at": "2026-07-22T09:49:53.367Z",
+    "number": 1,
+    "started_at": "2026-07-30T09:24:28.223Z",
+    "last_message_at": "2026-07-30T09:27:52.941Z",
     "chat_id": 6561059270
   },
   "last_session": {
-    "archive_file": "archive/2026-07-22-session2.md",
-    "ended_at": "2026-07-23T02:45:01.409424+00:00",
+    "archive_file": "archive/2026-07-30-session1.md",
+    "ended_at": "2026-07-31T02:45:01.830562+00:00",
     "tomorrow_notes": ""
   },
   "flow": {
-    "position": 1,
+    "position": 6,
     "current_task": null,
     "timer": null,
     "frozen": false
