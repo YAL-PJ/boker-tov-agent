@@ -37,6 +37,8 @@ The prototype uses Markdown and JSON rather than a database or vector store:
 - `archive/` stores digest headers followed by raw session logs.
 - `core/` separates identity, personal context, project context, and flow instructions.
 
+The first three are runtime artifacts created by the workflow on the host. They are gitignored and are not tracked in this repository; a separate private repository holds their nightly snapshots.
+
 Each model call receives the active context and the first 25 lines of every archive file. This makes memory easy to inspect and debug, but it is a single-user design with no concurrency control, indexed retrieval, or strong isolation of personal data.
 
 ### Polling instead of suspended timer executions
@@ -45,7 +47,7 @@ A scheduled branch reads the deadline from `state.json`. Once a timer is due, it
 
 ### Session lifecycle and diagnostics
 
-The connected graph initializes new sessions, appends structured and conversational logs, generates an archive digest on closure, resets live state, and stores the raw log with the digest. An n8n error-trigger branch and the normal logging path write local diagnostic files on the host. The repository's archived sessions provide examples of evolving behavior; `docs/test-checklist.md` is a manual test plan, not evidence that every listed scenario currently passes.
+The connected graph initializes new sessions, appends structured and conversational logs, generates an archive digest on closure, resets live state, and stores the raw log with the digest. An n8n error-trigger branch and the normal logging path write local diagnostic files on the host. A cron fallback closer archives any session left open overnight so the next morning starts from a clean state. Archived sessions stay on the host and are not published here; `docs/test-checklist.md` is a manual test plan, not evidence that every listed scenario currently passes.
 
 ## Architecture
 
@@ -79,9 +81,9 @@ The main runnable artifact is [`n8n-workflows/D4Iy8vHeUPpCGuzA.json`](n8n-workfl
 | Path | Responsibility |
 | --- | --- |
 | `core/` | Persona, safety boundary, user context, projects, and morning-flow specification |
-| `state.json` | Durable session and flow state |
-| `today.md` | Active session log |
-| `archive/` | Historical digests and raw session logs |
+| `state.json` | Durable session and flow state (runtime, not tracked) |
+| `today.md` | Active session log (runtime, not tracked) |
+| `archive/` | Historical digests and raw session logs (runtime, not tracked) |
 | `docs/features.md` | Intended behavior, including functionality beyond the connected workflow |
 | `docs/roadmap.md` | Progress notes and planned work; some statuses lag behind the export |
 | `docs/test-checklist.md` | Unexecuted manual checks spanning implemented and planned behavior |
@@ -104,7 +106,7 @@ This repository is a workflow export, not a packaged application. It assumes a s
 2. Import [`n8n-workflows/D4Iy8vHeUPpCGuzA.json`](n8n-workflows/D4Iy8vHeUPpCGuzA.json) into a self-hosted n8n instance.
 3. Assign your own Telegram and Google Gemini credentials to the imported nodes.
 4. Replace the personal material in `core/` with sanitized context appropriate for your use.
-5. Clear or replace `state.json`, `today.md`, and `archive/` before connecting another Telegram account.
+5. Create an empty `archive/` directory. `state.json` and `today.md` are written by the workflow on first run and are gitignored, so nothing needs clearing before you connect your own Telegram account.
 6. Verify that the n8n service account can read and write the repository and execute `python3`, `base64`, and the POSIX shell commands embedded in the workflow.
 7. Inspect the imported connections and run the applicable implemented checks in [`docs/test-checklist.md`](docs/test-checklist.md) before activating it.
 
@@ -124,8 +126,13 @@ The repository does not specify an n8n version, dependency manifest, automated i
 - File-backed memory is unusually easy to audit, but retrieval cost, concurrency, and privacy become visible constraints quickly.
 - Persisting timer deadlines and polling them is a practical alternative to holding long-running workflow executions open.
 - Prompt files benefit from separation by responsibility, just as application modules do; persona, safety, user context, and flow logic can evolve independently.
+- Separating runtime data from source is a design decision, not a cleanup step; the split has to exist before the first commit, because history is far harder to change afterwards.
 - Roadmaps and checklists are not evidence of implementation; the connected workflow graph is the source of truth.
 
 ## Privacy and Security
 
-The tracked state, core context, and archive files contain personal information, conversation history, and an account-specific chat identifier. Sanitize them before publishing or forking. The workflow exports include credential references by ID and name; secrets are expected to remain in n8n's credential store, but new credentials should still be assigned during setup.
+Session state, the active conversation log, and session archives are runtime data. They are gitignored and are not tracked here; a nightly job snapshots them to a separate private repository.
+
+The `core/` prompt files remain tracked and describe a single user's context and projects. Replace them with your own material before running the workflow against a different Telegram account.
+
+The workflow exports reference credentials by ID and name only. Secrets are expected to remain in n8n's credential store, and new credentials must be assigned to the imported nodes during setup.
