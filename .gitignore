@@ -4,3 +4,9 @@
 .obsidian/
 Welcome.md
 .claude/
+
+# runtime state and logs — synced to boker-tov-data (private)
+state.json
+today.md
+archive/
+*.log
